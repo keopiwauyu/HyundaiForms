@@ -14,10 +14,10 @@ magic: # Magic classes, optional (including its items).
         Text: '{Child Button("Functional") TextsList}'
     - text: "{DARKBLUE}{Item Text}"
       matrix: # Matrix? Range? Loop?
-        Text: '{Child Button("Untagged") TextsList}'
+        Text: '{Child Button("Untagged") TextsList}' # Untagged? Tagless?
 
-  custom: # All custom forms extend this.
-    arg: # Crash server if require arg not provided by child / terminal extender.
+  custom: # All custom classes / forms extend this.
+    arg: # Crash server if required arg not provided by children (extenders).
       Paragraph:
         optional: [] # I want to avoid using boolean values for future compatiblity.
     element:
@@ -34,13 +34,13 @@ magic: # Magic classes, optional (including its items).
       matrix:
         Text: '{Child Button("SecondaryFunctional") TextsList}'
 
-  modal: [] # Banned fields: close.
+  modal: []
 
 class: # Abstract forms, all fields are optional.
   PlayerSelectorBase:
-    input: # Crash server if require input not provided or invalid.
+    input: # Crash server if required input not provided or invalid.
       PlayerNames: []
-    arg: # Crash server if require arg not provided by child / terminal extender.
+    arg: # Crash server if required arg not provided by children (extenders).
       ActionsIDs:
         optional: [] # I want to avoid using boolean values for future compatiblity.
 
@@ -72,11 +72,11 @@ class: # Abstract forms, all fields are optional.
       class: PlayerFinder
       with:
         # ActionsIDs: "{Child Arg ActionIDs}" # Demo because all args to terminal extender is passed to root class.
-        Paragraph: Please do not select more than {Child Arg MaxTargetCount} targets.
+        Paragraph: You may select atmost {Child Arg MaxTargetCount} targets.
     input:
       SelectionContext: []
-      ActionNames: []
-      ActionIDsContext: []
+      ActionIDs: []
+      ActionNamesContext: []
     arg:
       MaxTargetCount:
         optional: []
@@ -88,7 +88,7 @@ class: # Abstract forms, all fields are optional.
         a: "{Opener PlayerFinderPreferences AlwaysShowSearchBar}"
         operation: Neq # NotEqual, NotEquals, !==, !=, !, Ne, Neq
         b: "0"
-      # tag: # Inherited.
+      # tag: # Demo, inherited.
     - text: "{Item Name}"
       id: "{Item Name}"
       toggle:
@@ -103,10 +103,10 @@ class: # Abstract forms, all fields are optional.
         items:
         - text: "{DARKAQUA}Search"
           id: search
-        - text: "{Item Name}"
-          id: '{ActionsIDsContext("{Item Name}")}'
+        - text: '{Input ActionNamesContext("{Item ID}")}'
+          id: "{Item ID}"
           matrix:
-            Name: "{ActionNames}"
+            ID: "{ActionIDs}"
 
     on: # Runs before output
       condition:
@@ -124,15 +124,15 @@ class: # Abstract forms, all fields are optional.
     input:
       Title:
         optional: [] # I want to avoid using boolean values for future compatiblity.
-    title: 'Search: {Input Title | ""}'
+    title: 'Search{Input Title WrapIfNonEmpty(": ")}'
     element:
-    - text: "Keywords"
+    - text: Keywords
       id: Keywords
       tag:
       - PrimaryFunctional # Apply the PrimaryFunctional format first.
       - FakeParagraph # Then the fake paragraph format. Order cannot be swapped.
       entry: # The official name "input" is confusing.
-        default: ""
+        #default: "" # Should be overridable by child.
         placeholder: Carrie Astley Lam Rick
     # output: Demo, output will be exact without this definition # Output for caller plugin.
       keywords: "{Result Keywords}"
@@ -156,5 +156,5 @@ class: # Abstract forms, all fields are optional.
     extend:
       class: AreYouSureTo
       with:
-        DARKRED: "DARKRED"
+        DARKRED: "{DARKRED}"
     title: "{Child Title}"
