@@ -1,0 +1,160 @@
+# All keys are case-insensitive.
+
+magic: # Magic classes, optional (including its items).
+  base: # All classes / forms extend this.
+    title: "{DARKAQUA}{Child Title}"
+    # Banned fields: button, element, yes, no, close
+
+  menu: # All menu classes / forms extend this.
+    paragraph: "{YELLOW}{Child Paragraph}" # The official name "content" is confusing.
+    button:
+    - text: "{DARKAQUA}{Item Text}"
+      matrix: # Matrix? Range? Loop?
+        # Soft-banned names: item, because this is for building matrix (list).
+        Text: '{Child Button("Functional") TextsList}'
+    - text: "{DARKBLUE}{Item Text}"
+      matrix: # Matrix? Range? Loop?
+        Text: '{Child Button("Untagged") TextsList}'
+
+  custom: # All custom forms extend this.
+    arg: # Crash server if require arg not provided by child / terminal extender.
+      Paragraph:
+        optional: [] # I want to avoid using boolean values for future compatiblity.
+    element:
+    - text: "{BOLD}{GOLD}{Item Text}"
+      matrix:
+        Text: '{Child Button("PrimaryFunctional") TextsList}'
+    - text: |
+        {Child Arg Paragraph WrapIfNonEmpty("{YELLOW}", "
+        
+        {Item Text}")}
+      matrix:
+        Text: '{Child Button("FakeParagraph") TextsList}'
+    - text: "{AQUA}{Item Text}"
+      matrix:
+        Text: '{Child Button("SecondaryFunctional") TextsList}'
+
+  modal: [] # Banned fields: close.
+
+class: # Abstract forms, all fields are optional.
+  PlayerSelectorBase:
+    input: # Crash server if require input not provided or invalid.
+      PlayerNames: []
+    arg: # Crash server if require arg not provided by child / terminal extender.
+      ActionsIDs:
+        optional: [] # I want to avoid using boolean values for future compatiblity.
+
+  PlayerSelector: # Menu form.
+    extend:
+      class: PlayerSelectorBase
+      with: []
+    input:
+      FacesURLContext: []
+    button:
+    - text: Search
+      tag: Functional # Banned tag: untagged (or is "tagless" better)? Cast to array if value is not.
+      rca:
+      - findplayer title-once {Title}
+      - findplayer limit-max-once 1
+      - findplayer limit-player-once {Input PlayerNames}
+      - '{Child Arg ActionIDs WrapIfNonEmpty("findplayer limit-action-once ")}'
+      - findplayer
+    - text: "{Item Name}"
+      id: "{Item Name}"
+      icon: '{Input FacesURLContext("{Item Name}")}'
+      matrix: # Matrix? Range? Loop?
+        Name: "{Input PlayerNames}"
+    # Demo, output will be exact without this definition # Output for caller plugin:
+    # output: {Result ID}
+
+  PlayerSelectorBulk: # Custom form.
+    extend:
+      class: PlayerFinder
+      with:
+        # ActionsIDs: "{Child Arg ActionIDs}" # Demo because all args to terminal extender is passed to root class.
+        Paragraph: Please do not select more than {Child Arg MaxTargetCount} targets.
+    input:
+      SelectionContext: []
+      ActionNames: []
+      ActionIDsContext: []
+    arg:
+      MaxTargetCount:
+        optional: []
+      # ActionsIDs: Demo, ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^.
+    title: "{Child Title}" # Make sure this does not inherit PlayerFinder's title. All "{unknown}" will crash the server unless silented.
+    element:
+    - embed: "{Parent Element Keywords}"
+      if: # If? Condition?
+        a: "{Opener PlayerFinderPreferences AlwaysShowSearchBar}"
+        operation: Neq # NotEqual, NotEquals, !==, !=, !, Ne, Neq
+        b: "0"
+      # tag: # Inherited.
+    - text: "{Item Name}"
+      id: "{Item Name}"
+      toggle:
+        default: '{Input SelectionContext("{Item Name}")}'
+      matrix:
+        Name: "{Input PlayerNames}"
+    - text: 
+      tag:
+      - SecondaryFunctional
+      id: Action
+      dropdown:
+        items:
+        - text: "{DARKAQUA}Search"
+          id: search
+        - text: "{Item Name}"
+          id: '{ActionsIDsContext("{Item Name}")}'
+          matrix:
+            Name: "{ActionNames}"
+
+    on: # Runs before output
+      condition:
+        a: "{Result Action ID}"
+        operation: Eq # Equal, Equals, ==, ===, Eq
+        b: search
+      rca: # If any player 
+      - findplayer title-once {Title}
+      - '{Arg MaxTargetCount WrapIfNonEmpty("findplayer limit-max-once ")}' # To Sofe: Could we have WrapIfNonEmpty for NumberInfo, please?
+      - findplayer limit-player-once {Input PlayerNames}
+      - '{Child Arg ActionIDs WrapIfNonEmpty("findplayer limit-action-once ")}'
+      - findplayer "{Result Keywords}"
+
+  PlayerFinder: # Custom form
+    input:
+      Title:
+        optional: [] # I want to avoid using boolean values for future compatiblity.
+    title: 'Search: {Input Title | ""}'
+    element:
+    - text: "Keywords"
+      id: Keywords
+      tag:
+      - PrimaryFunctional # Apply the PrimaryFunctional format first.
+      - FakeParagraph # Then the fake paragraph format. Order cannot be swapped.
+      entry: # The official name "input" is confusing.
+        default: ""
+        placeholder: Carrie Astley Lam Rick
+    # output: Demo, output will be exact without this definition # Output for caller plugin.
+      keywords: "{Result Keywords}"
+
+  AreYouSureTo: # Modal form.
+    arg:
+      optional: []
+    title: '{DARKAQUA}Are you sure to {BOLD}{Child Arg DARKRED | ""}{Child Title}'
+    yes: gui.yes # Minecraft UI variable.
+    no: gui.no # Minecraft UI variable.
+    on: # Runs before output
+      condition:
+        a: "{Result ID}"
+        # Operation? Logic?
+        operation: Neq # NotEqual, NotEquals, !==, !=, !, Ne, Neq
+        b: "no"
+      then:
+        fallback: [] # Fallback to previous form if there is. Should support any kinds of form, not just HyundaiForms.
+
+  DangerousZone:
+    extend:
+      class: AreYouSureTo
+      with:
+        DARKRED: "DARKRED"
+    title: "{Child Title}"
